@@ -39,9 +39,7 @@
 
 
 <h1 style="text-align: center; font-size: 1.8rem; margin-bottom: 0.5rem;">Obstetrícia</h1>
-<header style="text-align: center; margin-bottom: 2rem;">
-  <h1 style="font-size: 2.2rem; font-weight: bold;">Use sem moderação.<br><span style="font-size: 1.5rem; font-weight: normal;">- Pedro Pavan #T6</span></h1>
-</header>
+<p style=\"text-align: center; font-size: 0.9rem; margin-bottom: 2rem;\">autor: Pedro Pavan, UFFS.</p>
 
 
   <h1>Calculadora de IG</h1>
@@ -287,7 +285,7 @@
     const jantarMax = document.getElementById('jantarMax').value || '-';
 
     resumoDiv.innerHTML = `
-      <strong>#Controle de Glicemia</strong> (${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')})<br>
+      <strong>#Controle de Glicemia</strong> (${formatarDataBR(dataInicio)} a ${formatarDataBR(dataFim)})<br>
       ${total} aferições, ${alteradas} alteradas (${perc}%)<br><br>
       GJ (<95): ${gjAlt} alteradas — máxima ${gjMax} mg/dL<br>
       1h pós-café (<140): ${cafeAlt} alteradas — máxima ${cafeMax} mg/dL<br>
@@ -355,7 +353,7 @@
 
     const perc = ((alteradas / afericoes) * 100).toFixed(1);
     resumoDiv.innerHTML = `
-      <strong>#MRPA</strong> (${new Date(inicio).toLocaleDateString('pt-BR')} - ${new Date(fim).toLocaleDateString('pt-BR')}): 
+      <strong>#MRPA</strong> (${formatarDataBR(inicio)} - ${formatarDataBR(fim)}): 
       ${afericoes} aferições, com ${alteradas} alteradas (${perc}%)<br>
       Máxima PAS: ${pas} mmHg<br>
       Máxima PAD: ${pad} mmHg
@@ -364,9 +362,9 @@
 </script>
 
 
-<h2>PFE(p) por IG</h2>
+<h2>Percentil por PFE</h2>
 
-<label for="semanasPFE">IG (semanas):</label>
+<label for="semanasPFE">IG (sem.):</label>
 <input type="number" id="semanasPFE" min="20" max="41" step="1">
 
 <label for="pesoPFE">PFE (g):</label>
@@ -375,38 +373,48 @@
 <button onclick="calcularPercentil()">Calcular Percentil</button>
 <div class="resultado" id="resultadoPFE"></div>
 
+
+
+
 <script>
-  function calcularPercentil() {
-    const semanas = parseInt(document.getElementById('semanasPFE').value);
-    const peso = parseInt(document.getElementById('pesoPFE').value);
-    const resultado = document.getElementById('resultadoPFE');
-
-    if (isNaN(semanas) || isNaN(peso) || semanas < 20 || semanas > 41) {
-      resultado.innerText = 'Preencha valores válidos entre 20 e 41 semanas';
-      return;
-    }
-
-    // Valores aproximados da curva de Hadlock (percentil 10 e 90)
-    const hadlock = {
-      20: [260, 370], 21: [310, 430], 22: [360, 500], 23: [420, 580],
-      24: [500, 680], 25: [580, 790], 26: [670, 910], 27: [770, 1050],
-      28: [880, 1200], 29: [1000, 1350], 30: [1140, 1500], 31: [1280, 1650],
-      32: [1430, 1800], 33: [1580, 2000], 34: [1740, 2200], 35: [1900, 2400],
-      36: [2100, 2650], 37: [2300, 2900], 38: [2500, 3150], 39: [2700, 3400],
-      40: [2850, 3600], 41: [2950, 3700]
-    };
-
-    const [p10, p90] = hadlock[semanas];
-
-    let classificacao = '';
-    if (peso < p10) classificacao = 'Abaixo do p10 (Restrição?)';
-    else if (peso > p90) classificacao = 'Acima do p90 (Macrossomia?)';
-    else classificacao = 'AIG';
-
-    resultado.innerHTML = `Percentis esperados para ${semanas} semanas:<br>
-      P10 ≈ ${p10}g — P90 ≈ ${p90}g<br><br>
-      <strong>${classificacao}</strong>`;
+  function formatarDataBR(dataStr) {
+    if (!dataStr) return '-';
+    const [ano, mes, dia] = dataStr.split('-');
+    return `${dia}/${mes}/${ano}`;
   }
+</script>
+
+
+<script>
+function calcularPercentil() {
+  const semanas = parseInt(document.getElementById('semanasPFE').value);
+  const peso = parseInt(document.getElementById('pesoPFE').value);
+  const resultado = document.getElementById('resultadoPFE');
+
+  if (isNaN(semanas) || isNaN(peso) || semanas < 20 || semanas > 41) {
+    resultado.innerText = 'Preencha valores válidos entre 20 e 41 semanas';
+    return;
+  }
+
+  const hadlock = {
+    20: [260, 370], 21: [310, 430], 22: [360, 500], 23: [420, 580],
+    24: [500, 680], 25: [580, 790], 26: [670, 910], 27: [770, 1050],
+    28: [880, 1200], 29: [1000, 1350], 30: [1140, 1500], 31: [1280, 1650],
+    32: [1430, 1800], 33: [1580, 2000], 34: [1740, 2200], 35: [1900, 2400],
+    36: [2100, 2650], 37: [2300, 2900], 38: [2500, 3150], 39: [2700, 3400],
+    40: [2850, 3600], 41: [2950, 3700]
+  };
+
+  const [p10, p90] = hadlock[semanas];
+  const percentilEstimado = 10 + ((peso - p10) / (p90 - p10)) * 80;
+  const percentilFormatado = percentilEstimado.toFixed(0);
+
+  resultado.innerHTML = `
+    p(AIG) para ${semanas} semanas:<br>
+    P10 ≈ ${p10}g — P90 ≈ ${p90}g<br><br>
+    <strong>p ≈ ${percentilFormatado}</strong>
+  `;
+}
 </script>
 
 </body>
